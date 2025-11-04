@@ -1,3 +1,10 @@
-# Ignore artifacts:
+# Ignore build outputs and dependencies
 build
 coverage
+dist
+.next
+.turbo
+out
+node_modules
+pnpm-lock.yaml
+*.log
