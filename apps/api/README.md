@@ -1,98 +1,116 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Nest Gateway (apps/api)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The Nest Gateway is a lightweight proxy that exposes a clean REST interface for the Letskraack stack. It forwards requests to the Go microservice, handles cross-origin access for the Next.js frontend, and centralizes environment-driven configuration.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 1. Responsibilities
 
-## Description
+- Provide `/ping` and `/login` endpoints to the web app.
+- Forward calls to the Go backend (`BACKEND_URL`) using Axios.
+- Standardize response shapes for the frontend.
+- Apply CORS rules so browser clients can call the gateway directly.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 2. Tech Stack
 
-## Project setup
+- Node.js 20 runtime (see root `package.json#engines`).
+- NestJS 11 with the default Express adapter.
+- TypeScript (strict mode, decorators enabled).
+- Axios for outbound HTTP calls.
 
-```bash
-$ pnpm install
+## 3. Getting Started
+
+### Prerequisites
+
+- Install dependencies at the repo root: `pnpm install`.
+- Ensure the Go service is reachable on `http://localhost:8080` (default).
+
+### Local Development
+
+```sh
+pnpm --filter api start:dev
 ```
 
-## Compile and run the project
+The server listens on `PORT` or `3001`. By default it proxies to `http://localhost:8080`. Adjust `BACKEND_URL` to target another host.
 
-```bash
-# development
-$ pnpm run start
+### Environment Variables
 
-# watch mode
-$ pnpm run start:dev
+| Variable      | Purpose                                        | Default                 |
+| ------------- | ---------------------------------------------- | ----------------------- |
+| `PORT`        | Port for the gateway HTTP server               | `3001`                  |
+| `BACKEND_URL` | Base URL of the Go service (`/ping`, `/login`) | `http://localhost:8080` |
 
-# production mode
-$ pnpm run start:prod
+Define values in `.env`, `.env.local`, or container environment; they are gitignored.
+
+## 4. Project Structure
+
+```
+src/
+  main.ts          # Bootstraps Nest application and CORS
+  app.module.ts    # Registers controller/service
+  app.controller.ts# Maps routes and proxies to Go service
+  app.service.ts   # Placeholder service (extend as needed)
+test/
+  app.e2e-spec.ts  # Example e2e test (update to match current routes)
 ```
 
-## Run tests
+## 5. Available Scripts
 
-```bash
-# unit tests
-$ pnpm run test
+Run scripts with `pnpm --filter api <script>` from the repo root.
 
-# e2e tests
-$ pnpm run test:e2e
+| Script        | Description                                |
+| ------------- | ------------------------------------------ |
+| `build`       | Compile TS to JS (`dist/`).                |
+| `start`       | Run compiled app (`node dist/main`).       |
+| `start:dev`   | Watch mode with hot reload via Nest CLI.   |
+| `start:debug` | Start with Node inspector.                 |
+| `start:prod`  | Production run from build artifacts.       |
+| `lint`        | ESLint with project-aware parser settings. |
+| `test`        | Jest unit tests.                           |
+| `test:e2e`    | End-to-end tests (Supertest).              |
+| `test:cov`    | Coverage report.                           |
 
-# test coverage
-$ pnpm run test:cov
+## 6. HTTP Endpoints
+
+| Method | Path     | Description                                    |
+| ------ | -------- | ---------------------------------------------- |
+| `GET`  | `/ping`  | Calls Go `/ping` and returns `{ goResponse }`. |
+| `POST` | `/login` | Forwards credentials to Go `/login`.           |
+
+Extend `AppController` to add new routes or transform responses before returning to clients.
+
+## 7. Testing
+
+- Unit tests: `pnpm --filter api test`.
+- E2E tests: `pnpm --filter api test:e2e`. Update `test/app.e2e-spec.ts` to mirror the current API (default template expects `/`).
+- Coverage: `pnpm --filter api test:cov`.
+
+## 8. Docker
+
+The service includes a Node 20 Alpine Dockerfile:
+
+```sh
+docker build -t letskraack-api .
+docker run -p 3001:3001 --env BACKEND_URL=http://host.docker.internal:8080 letskraack-api
 ```
 
-## Deployment
+Within `docker-compose.yaml`, update the `gateway` service if you change ports or environment settings.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## 9. Extending the Gateway
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. Add new proxies by creating methods in `AppController` and wiring additional services if needed.
+2. Use Nest modules to organize complex domains or add middleware (logging, auth, rate limiting).
+3. Integrate validation pipes or DTOs to enforce request/response schemas.
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+## 10. Troubleshooting
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- **CORS errors**: Ensure `app.enableCors` is configured for the domains you expect.
+- **Proxy failures**: Confirm `BACKEND_URL` and the Go service are reachable; Axios errors bubble up to the caller.
+- **E2E failures**: Align tests with implemented routes or mock remote services.
+- **Docker networking**: When running via compose, reference services by container name (e.g., `http://backend:8080`).
 
-## Resources
+## 11. Helpful References
 
-Check out a few resources that may come in handy when working with NestJS:
+- NestJS docs: https://docs.nestjs.com
+- Axios docs: https://axios-http.com
+- Letskraack root README for stack-wide instructions.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This README focuses on the gateway. For cross-stack guidance, refer to the monorepo documentation at the root of the project.

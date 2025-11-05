@@ -1,20 +1,20 @@
 version: '3.8'
 services:
-  backend:
-    build: ./apps/backend
+  services:
+    build: ./apps/services
     container_name: go-backend
     ports:
       - '8080:8080'
 
-  gateway:
-    build: ./apps/gateway
+  api:
+    build: ./apps/api
     container_name: nest-gateway
     ports:
       - '3001:3001'
     depends_on:
-      - backend
+      - services
     environment:
-      - BACKEND_URL=http://backend:8080
+      - BACKEND_URL=http://services:8080
 
   web:
     build: ./apps/web
@@ -22,6 +22,6 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - gateway
+      - api
     environment:
-      - NEXT_PUBLIC_GATEWAY_URL=http://localhost:3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
