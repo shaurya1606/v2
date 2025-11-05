@@ -12,13 +12,13 @@ interface LoginResponseBody {
 
 type PingResponseBody = string;
 
+const backendURL = process.env.BACKEND_URL || 'http://localhost:8080';
+
 @Controller()
 export class AppController {
   @Get('ping')
   async ping(): Promise<{ goResponse: PingResponseBody }> {
-    const response = await axios.get<PingResponseBody>(
-      'http://localhost:8080/ping',
-    );
+    const response = await axios.get<PingResponseBody>(backendURL + '/ping');
     const data: PingResponseBody = response.data;
     return { goResponse: data };
   }
@@ -26,7 +26,7 @@ export class AppController {
   @Post('login')
   async login(@Body() body: LoginRequestBody): Promise<LoginResponseBody> {
     const response = await axios.post<LoginResponseBody>(
-      'http://localhost:8080/login',
+      backendURL + '/login',
       body,
     );
     const data: LoginResponseBody = response.data;

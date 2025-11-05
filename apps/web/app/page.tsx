@@ -6,9 +6,11 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
 
+  const gatewayURL = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3001';
+
   async function handleLogin() {
     try {
-      const res = await fetch('http://localhost:8080/login', {
+      const res = await fetch(`${gatewayURL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
